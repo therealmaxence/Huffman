@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 public class TextFile {
     private String path;
@@ -55,8 +56,9 @@ public class TextFile {
         return count;
     }
     
-    public Stream<Entry<Character, Integer>> createSortedMap() {
+    public List<Entry<Character, Integer>> createSortedMap() { 
         Map<Character, Integer> map = new HashMap<>();
+
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
             int ch;
             while ((ch = bufferedReader.read()) != -1) {
@@ -66,29 +68,40 @@ public class TextFile {
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
-        Stream<Map.Entry<Character,Integer>> sortedmap = map.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue()));
-        return sortedmap;
+
+        return map.entrySet()
+                  .stream()
+                  .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                  .collect(Collectors.toList());
     }
 
+
     
-    public StringBuilder printMap(Stream<Map.Entry<Character, Integer>> map) {
+    public StringBuilder printMap(List<Map.Entry<Character, Integer>> map) {
         StringBuilder str = new StringBuilder();
-        map.forEach(entry -> {
+
+        for (Map.Entry<Character, Integer> entry : map) {
             String key = (entry.getKey() == '\n') ? "'\\n'" : "'" + entry.getKey() + "'";
             str.append(key).append(" : ").append(entry.getValue()).append("\n");
-        });
+        }
+
         System.out.println(str);
         return str;
     }
+
     
     public void createOccurenceFile(TextFile entryfile) {
     	
-    	Stream<Entry<Character, Integer>> map = entryfile.createSortedMap();
+    	List<Entry<Character, Integer>> map = entryfile.createSortedMap();
     	
     	StringBuilder strbd = new StringBuilder();	
     	strbd.append(entryfile.countCharacters()).append(printMap(map));
     	String str = new String(strbd);
     	
     	writeFile(path, str);
+    }
+    
+    public String getPath() {
+    	return path;
     }
 }
