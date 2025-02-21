@@ -11,6 +11,9 @@ public class Node {
 		this.right = this.left = null;
 	}
 	
+	public boolean isLeaf() {
+		return(this.getLeft() == null && this.getRight() == null);
+	}
 	
 	public Character getTag() {
 		return tag;

@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -20,13 +19,14 @@ public class TextFile {
     
     public String readFile() {
         StringBuilder content = new StringBuilder();
+        
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 content.append(line).append("\n");
             }
-            System.out.println(content);
             return content.toString();
+            
         } catch (IOException e) {
             return "Error reading file: " + e.getMessage();
         }
@@ -34,10 +34,11 @@ public class TextFile {
 
     
     public boolean writeFile(String filename, String data) {
+    	
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("../data/" + filename))) {
             writer.write(data);
-            return true;
-        } catch (IOException e) {
+            return true;      
+        } catch (IOException e) {	
             System.out.println("Error writing file: " + e.getMessage());
             return false;
         }
@@ -52,7 +53,6 @@ public class TextFile {
         } catch (IOException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
-        System.out.println(count);
         return count;
     }
     
@@ -81,7 +81,7 @@ public class TextFile {
         StringBuilder str = new StringBuilder();
 
         for (Map.Entry<Character, Integer> entry : map) {
-            String key = (entry.getKey() == '\n') ? "'\\n'" : "'" + entry.getKey() + "'";
+            String key = "'" + entry.getKey() + "'";
             str.append(key).append(" : ").append(entry.getValue()).append("\n");
         }
 
