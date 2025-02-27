@@ -57,7 +57,8 @@ public class BinaryEncoding {
             }
             sb.append('\n');
         }
-        file.writeFile(file.getPath(), sb.toString());
+
+        file.writeFile(file.getName(), sb.toString());
     }
 
     
