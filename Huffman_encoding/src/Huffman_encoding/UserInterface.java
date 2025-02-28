@@ -2,6 +2,10 @@ package Huffman_encoding;
 
 import javax.swing.*;
 import javax.swing.TransferHandler.TransferSupport;
+import javax.swing.border.TitledBorder;
+
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.datatransfer.*;
 import java.io.File;
 import java.util.List;
@@ -13,11 +17,12 @@ public class UserInterface extends JFrame {
 	 */
 	private static final long serialVersionUID = 1L;
 	private BinaryEncoding binaryTable;
+	private HuffmanTree ht;
 	private TextFile inputFile;
-	private TextFile BinaryOutputFile= new TextFile("../data/TEST.bin");
-	private TextFile TextOutputFile= new TextFile("../data/TEST.txt");
-	private TextFile occurrenceFile = new TextFile("../data/occurrence.txt");
-	private TextFile HuffmanTreeFile = new TextFile("../data/HuffmanTree.txt");
+	private TextFile BinaryOutputFile;
+	private TextFile TextOutputFile;
+	private TextFile OccurrenceFile = new TextFile("Occurrence.txt");
+	private TextFile HuffmanTreeFile = new TextFile("HuffmanTree.txt");
 	
 
     public UserInterface() {
@@ -27,7 +32,11 @@ public class UserInterface extends JFrame {
 
         // Create a panel for file dropping
         JPanel dropPanel = new JPanel();
-        dropPanel.setBorder(BorderFactory.createTitledBorder("Drop your file here"));
+        TitledBorder border = BorderFactory.createTitledBorder("Drop your file here");
+        border.setTitleColor(Color.WHITE);
+        dropPanel.setBorder(border);
+        dropPanel.setBackground(Color.DARK_GRAY);
+
         
         // Set up the TransferHandler for drag-and-drop
         dropPanel.setTransferHandler(new TransferHandler() {
@@ -69,8 +78,8 @@ public class UserInterface extends JFrame {
             	
             	// Create the Huffman Tree
                 List<Entry<Character, Integer>> sortedmap = inputFile.createSortedMap();
-        		HuffmanTree ht = new HuffmanTree(sortedmap);
-        		inputFile.createOccurrenceFile(occurrenceFile);
+        		ht = new HuffmanTree(sortedmap);
+        		OccurrenceFile.createOccurrenceFile(inputFile);
         		binaryTable = new BinaryEncoding(ht);
         		binaryTable.createEncodingFile(HuffmanTreeFile);
     			
@@ -84,10 +93,20 @@ public class UserInterface extends JFrame {
         encodeButton.addActionListener(e -> {
             if (inputFile != null && inputFile.getName().endsWith(".txt")) {
             
+            	// Choose the name of the output file
+            	String filename = JOptionPane.showInputDialog(null, 
+            	        "Choose the name of the output file:", 
+            	        "File Name Input", 
+            	        JOptionPane.PLAIN_MESSAGE);
+            	BinaryOutputFile = new TextFile("../data/" + filename + ".bin");
+            	
+            	
         		// Encode the File
     			binaryTable.createEncodedFile(inputFile, BinaryOutputFile);
     			
-                JOptionPane.showMessageDialog(this, "Encoding file: " + inputFile.getName());
+                JOptionPane.showMessageDialog(this, "Encoded file: " + BinaryOutputFile.getPath());
+            } else if (ht == null){
+                JOptionPane.showMessageDialog(this, "Huffman Tree not created.");
             } else {
                 JOptionPane.showMessageDialog(this, "Please drop a valid .txt file for encoding.");
             }
@@ -96,21 +115,39 @@ public class UserInterface extends JFrame {
         JButton decodeButton = new JButton("Decode");
         decodeButton.addActionListener(e -> {
             if (inputFile != null && inputFile.getName().endsWith(".bin")) {
-        		
+            	
+            	// Choose the name of the output file
+            	String filename = JOptionPane.showInputDialog(null, 
+            	        "Choose the name of the output file:", 
+            	        "File Name Input", 
+            	        JOptionPane.PLAIN_MESSAGE);
+            	TextOutputFile = new TextFile("../data/" + filename + ".txt");
+            	
         		// Decode the file
     			binaryTable.createDecodedFile(inputFile, TextOutputFile);
     			
-                JOptionPane.showMessageDialog(this, "Decoding file: " + inputFile.getName());
+                JOptionPane.showMessageDialog(this, "Decoded file: " + TextOutputFile.getName());
+            } else if (ht == null){
+                JOptionPane.showMessageDialog(this, "Huffman Tree not created.");
             } else {
                 JOptionPane.showMessageDialog(this, "Please drop a valid .bin file for decoding.");
             }
         });
         
+        // Buttons
         JPanel buttonPanel = new JPanel();
-        buttonPanel.add(treeButton);
-        buttonPanel.add(encodeButton);
-        buttonPanel.add(decodeButton);
+        buttonPanel.setBackground(Color.DARK_GRAY);
         
+        JButton[] buttons = {treeButton, encodeButton, decodeButton};
+        
+        for (JButton btn : buttons) {
+            btn.setBackground(Color.WHITE);
+            btn.setForeground(Color.BLACK);
+            btn.setFont(new Font("Arial", Font.BOLD, 12));
+            buttonPanel.add(btn);
+        }
+        
+
         getContentPane().add(dropPanel, "Center");
         getContentPane().add(buttonPanel, "South");
     }
