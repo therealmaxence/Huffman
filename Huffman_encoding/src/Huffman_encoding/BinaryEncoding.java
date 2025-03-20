@@ -2,16 +2,23 @@ package Huffman_encoding;
 
 import java.io.*;
 import java.util.*;
-import java.util.Map.Entry;
 
+/**
+ * Handles Huffman encoding and binary file writing for text compression.
+ */
 public class BinaryEncoding {
     private HuffmanTree ht;
-    private Map<Character, byte[]> encodingTable;
+    private Map<Character, String> encodingTable;
 
+    /**
+     * Constructs a BinaryEncoding object with a given Huffman tree.
+     *
+     * @param ht The Huffman tree used for encoding.
+     */
     public BinaryEncoding(HuffmanTree ht) {
         this.ht = ht;
         this.encodingTable = new HashMap<>();
-        generateBinaryCodes(ht.getRoot(), new ArrayList<>());
+        generateBinaryCodes(ht.getRoot(), "");
     }
 
     /**
@@ -20,29 +27,17 @@ public class BinaryEncoding {
      * @param node The current node in the Huffman tree.
      * @param code The binary code constructed so far.
      */
-    private void generateBinaryCodes(Node node, List<Byte> code) {
-        if (node == null) {
-            return;
-        }
+    private void generateBinaryCodes(Node node, String code) {
+        if (node == null) return;
 
         if (node.getTag() != null) {
-            byte[] binaryCode = new byte[code.size()];
-            for (int i = 0; i < code.size(); i++) {
-                binaryCode[i] = code.get(i);
-            }
-            encodingTable.put(node.getTag(), binaryCode);
+            encodingTable.put(node.getTag(), code);
         }
 
-        code.add((byte) 0);
-        generateBinaryCodes(node.getLeft(), code);
-        code.remove(code.size() - 1);
-
-        code.add((byte) 1);
-        generateBinaryCodes(node.getRight(), code);
-        code.remove(code.size() - 1);
+        generateBinaryCodes(node.getLeft(), code + "0");
+        generateBinaryCodes(node.getRight(), code + "1");
     }
 
-    
     /**
      * Writes the encoding table to a file for reference.
      *
@@ -50,67 +45,68 @@ public class BinaryEncoding {
      */
     public void createEncodingFile(TextFile file) {
         StringBuilder sb = new StringBuilder();
-        for (Entry<Character, byte[]> entry : encodingTable.entrySet()) {
-            sb.append("'").append(entry.getKey()).append("' → ");
-            for (byte b : entry.getValue()) {
-                sb.append(b);
+        for (Map.Entry<Character, String> entry : encodingTable.entrySet()) {
+            if (entry.getKey() == '\n') {
+                sb.append("'").append("\\n").append("' → ");
+            } else if (entry.getKey() == '\r') {
+                sb.append("'").append("\\r").append("' → ");
+            } else {
+                sb.append("'").append(entry.getKey()).append("' → ");
             }
-            sb.append('\n');
+            sb.append(entry.getValue()).append('\n');
         }
-
         file.writeFile(file.getName(), sb.toString());
     }
 
-    
     /**
-     * Encodes a string into a byte array using the Huffman encoding table.
+     * Creates a binary-encoded file from the given input text file.
      *
-     * @param str The string to encode.
-     * @return The encoded byte array.
-     */
-    public byte[] encodeString(String str) {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        for (char character : str.toCharArray()) {
-            byte[] binaryCode = encodingTable.get(character);
-            if (binaryCode != null) {
-                for (byte b : binaryCode) {
-                    byteStream.write(b);
-                }
-            } else {
-                System.err.println("Warning: Character '" + character + "' not found in encoding table.");
-            }
-        }
-        return byteStream.toByteArray();
-    }
-
-    /**
-     * Encodes the content of an input file and writes the result to an output file.
-     *
-     * @param inputFile  The input text file.
-     * @param outputFile The output binary file.
+     * @param inputFile  The input text file to encode.
+     * @param outputFile The output binary file to write the compressed data.
      */
     public void createEncodedFile(TextFile inputFile, TextFile outputFile) {
-    	
         String fileContent = inputFile.readFile();
-        byte[] encodedData = encodeString(fileContent);
+        StringBuilder bitString = new StringBuilder();
+
+        for (char character : fileContent.toCharArray()) {
+            bitString.append(encodingTable.get(character)); 
+        }
+
+        byte[] packedBytes = packBits(bitString.toString()); 
 
         try (FileOutputStream fos = new FileOutputStream(outputFile.getPath())) {
-            fos.write(encodedData);
+            fos.write(packedBytes);
         } catch (IOException e) {
             System.err.println("Error writing encoded file: " + e.getMessage());
         }
     }
 
     /**
-     * Decodes the content of a binary file and writes the result to an output file.
+     * Packs a binary string into a byte array to save space.
      *
-     * @param inputFile  The input binary file.
-     * @param outputFile The output text file.
+     * @param bitString The binary string representation of the encoded text.
+     * @return A packed byte array representing the encoded data.
+     */
+    private byte[] packBits(String bitString) {
+        int length = (bitString.length() + 7) / 8; 
+        byte[] byteArray = new byte[length];
+
+        for (int i = 0; i < bitString.length(); i++) {
+            if (bitString.charAt(i) == '1') {
+                byteArray[i / 8] |= (1 << (7 - (i % 8))); 
+            }
+        }
+        return byteArray;
+    }
+
+    /**
+     * Reads a binary file and decodes it back into text using the Huffman tree.
+     *
+     * @param inputFile  The binary file containing compressed Huffman data.
+     * @param outputFile The output text file to store the decoded content.
      */
     public void createDecodedFile(TextFile inputFile, TextFile outputFile) {
-    	
         byte[] encodedData = readBinaryFile(inputFile);
-        System.out.println(encodedData);
         if (encodedData == null) {
             System.err.println("Error: Could not read input file.");
             return;
@@ -119,54 +115,64 @@ public class BinaryEncoding {
         StringBuilder decodedText = new StringBuilder();
         Node currentNode = ht.getRoot();
 
-        for (byte b : encodedData) {
-	        currentNode = (b == 1) ? currentNode.getRight() : currentNode.getLeft();
-	        if (currentNode.isLeaf()) {
-	            decodedText.append(currentNode.getTag());
-	            currentNode = ht.getRoot();
+        for (byte b : decodeBits(encodedData)) {
+            currentNode = (b == 1) ? currentNode.getRight() : currentNode.getLeft();
+            if (currentNode.isLeaf()) {
+                decodedText.append(currentNode.getTag());
+                currentNode = ht.getRoot();
             }
         }
+
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile.getPath()))) {
             writer.write(decodedText.toString());
         } catch (IOException e) {
             System.err.println("Error writing decoded file: " + e.getMessage());
         }
     }
-    
-    
 
     /**
-     * Reads a binary file and returns its content as a byte array.
+     * Reads a binary file into a byte array.
      *
-     * @param filePath The path to the binary file.
-     * @return The content of the file as a byte array, or null if an error occurs.
+     * @param file The binary file to read.
+     * @return The file content as a byte array.
      */
     public byte[] readBinaryFile(TextFile file) {
-    	
         try (FileInputStream fis = new FileInputStream(file.getPath());
              ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-        	
             byte[] buffer = new byte[4096];
             int bytesRead;
-            
             while ((bytesRead = fis.read(buffer)) != -1) {
                 bos.write(buffer, 0, bytesRead);
             }
             return bos.toByteArray();
-            
         } catch (IOException e) {
             System.err.println("Error reading binary file: " + e.getMessage());
             return null;
         }
     }
-    
 
     /**
-     * Returns the encoding table for testing or debugging purposes.
+     * Decodes a byte array back into individual bits for decompression.
      *
-     * @return The encoding table.
+     * @param byteArray The byte array to decode.
+     * @return A list of individual bits (0s and 1s).
      */
-    public Map<Character, byte[]> getEncodingTable() {
+    private List<Byte> decodeBits(byte[] byteArray) {
+        List<Byte> bitList = new ArrayList<>();
+        for (byte b : byteArray) {
+            for (int i = 7; i >= 0; i--) {
+                bitList.add((byte) ((b >> i) & 1)); 
+            }
+        }
+        return bitList;
+    }
+
+    /**
+     * Returns the encoding table for debugging purposes.
+     *
+     * @return The Huffman encoding table.
+     */
+    public Map<Character, String> getEncodingTable() {
         return encodingTable;
     }
 }

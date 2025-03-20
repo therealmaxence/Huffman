@@ -99,8 +99,18 @@ public class TextFile {
     public StringBuilder printMap(List<Map.Entry<Character, Integer>> map) {
         StringBuilder str = new StringBuilder();
         for (Map.Entry<Character, Integer> entry : map) {
-            str.append("'").append(entry.getKey()).append("' : ")
-               .append(entry.getValue()).append("\n");
+        	if (entry.getKey() == '\n') {
+        		str.append("'").append("\\n").append("' : ")
+                   .append(entry.getValue()).append("\n");
+        		}
+        	else if (entry.getKey() == '\r') {
+        		str.append("'").append("\\r").append("' : ")
+                .append(entry.getValue()).append("\n");
+        	}
+        	else {
+	            str.append("'").append(entry.getKey()).append("' : ")
+	               .append(entry.getValue()).append("\n");
+            }
         }
         System.out.println(str);
         return str;
