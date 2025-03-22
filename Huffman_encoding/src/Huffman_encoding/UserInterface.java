@@ -94,8 +94,8 @@ public class UserInterface extends JFrame {
             if (inputFile != null && inputFile.getName().endsWith(".txt")) {
                 String filename = JOptionPane.showInputDialog(null, "Choose the name of the output file:", "File Name Input", JOptionPane.PLAIN_MESSAGE);
                 BinaryOutputFile = new TextFile("../data/" + filename + ".bin");
-                binaryTable.createEncodedFile(inputFile, BinaryOutputFile);
-                JOptionPane.showMessageDialog(this, "Encoded file: " + BinaryOutputFile.getPath());
+                float compressionRate = binaryTable.createEncodedFile(inputFile, BinaryOutputFile);
+                JOptionPane.showMessageDialog(this, "Encoded file: \n" + BinaryOutputFile.getPath() + "\nCompression : \n" + compressionRate + "%");
             } else if (ht == null) {
                 JOptionPane.showMessageDialog(this, "Huffman Tree not created.");
             } else {

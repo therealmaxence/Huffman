@@ -8,6 +8,7 @@ import java.util.*;
  */
 public class BinaryEncoding {
     private HuffmanTree ht;
+    private float compressionRate;
     private Map<Character, String> encodingTable;
 
     /**
@@ -59,12 +60,15 @@ public class BinaryEncoding {
     }
 
     /**
-     * Creates a binary-encoded file from the given input text file.
+     * Creates a binary-encoded file from the given input text file 
+     * and calculate the compression rate
      *
      * @param inputFile  The input text file to encode.
      * @param outputFile The output binary file to write the compressed data.
+     * @return compression rate of the outputFile
      */
-    public void createEncodedFile(TextFile inputFile, TextFile outputFile) {
+    public float createEncodedFile(TextFile inputFile, TextFile outputFile) {
+   
         String fileContent = inputFile.readFile();
         StringBuilder bitString = new StringBuilder();
 
@@ -73,12 +77,15 @@ public class BinaryEncoding {
         }
 
         byte[] packedBytes = packBits(bitString.toString()); 
-
+        
+        compressionRate = (float) Math.floor(((float) packedBytes.length / (float) fileContent.length()) * 1000) / 10; 
+        
         try (FileOutputStream fos = new FileOutputStream(outputFile.getPath())) {
             fos.write(packedBytes);
         } catch (IOException e) {
             System.err.println("Error writing encoded file: " + e.getMessage());
         }
+        return compressionRate;
     }
 
     /**
@@ -175,4 +182,5 @@ public class BinaryEncoding {
     public Map<Character, String> getEncodingTable() {
         return encodingTable;
     }
+    
 }
